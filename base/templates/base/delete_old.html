@@ -1,0 +1,14 @@
+{% extends 'main.html' %}
+{% block content %}
+
+<div>
+    <form method = 'POST', action = "">
+        {% csrf_token %}
+        <p>Ban co chac la muon xoa Topic {{room.name}} khong??</p>
+        <a href = '{{request.META.HTTP_REFERER}}'>Go Back</a>
+        
+        <input type = 'submit' value ='OK tôi xóa'/>
+    </form>
+</div>
+
+{% endblock  %}

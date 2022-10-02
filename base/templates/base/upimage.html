@@ -1,0 +1,78 @@
+{% extends 'main.html' %}
+{% block content %}
+
+  <body>
+
+    <main class="update-account layout">
+        <div class="container">
+            <div class="layout__box">
+                <div class="layout__boxHeader">
+                    <div class="layout__boxTitle">
+                        <a href={%url 'home'%}>
+                            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                viewBox="0 0 32 32">
+                                <title>arrow-left</title>
+                                <path
+                                    d="M13.723 2.286l-13.723 13.714 13.719 13.714 1.616-1.611-10.96-10.96h27.625v-2.286h-27.625l10.965-10.965-1.616-1.607z">
+                                </path>
+                            </svg>
+                        </a>
+                        <h3>Mời chọn file muốn up !</h3>
+                    </div>
+                </div>
+
+
+
+
+
+                <div class="layout__body">
+                    
+                    <form method='POST' action="" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="form-group m-3">
+                            <label>Name img</label>
+                            <input required name="nameimg" type="text" placeholder="Enter a description"
+                                class="form-control">
+                        </div>
+
+
+                        <div class="form-group m-3">
+                            <label>Upload image</label>
+                            <input required name="images" type="file" multiple class="form-control-file">
+                        </div>
+
+                        <div class="form__action">
+                            <a class="btn btn--dark" href='{{request.META.HTTP_REFERER}}'>Huy</a>
+                            
+                            {% comment %} <button href={% url 'room'  room.host.id %} class="btn btn--main" type="submit">Update</button> {% endcomment %}
+                            <button class="btn btn--main" ,  type="submit">Dự đoán</button>
+                            
+                        </div>
+
+                    </form>
+
+
+
+
+
+                        </div>
+
+              {% comment %} <div class="form__group">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" placeholder="E.g. John doe" />
+              </div> {% endcomment %}
+
+
+
+
+
+                    </form>
+                </div>
+            </div>
+        </div>
+      </div>
+    </main>
+  </body>
+
+{% endblock  %}

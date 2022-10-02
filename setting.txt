@@ -1,0 +1,8 @@
+numpy
+django
+pandas
+opencv-python
+matplotlib
+keras
+tensorflow
+os

@@ -1,0 +1,30 @@
+{% extends 'main.html' %}
+{% block content %}
+
+{% if  page == 'login_page'%}
+
+    <form method = "POST", action= "">
+        {% csrf_token %}
+        <label>Nhập username</lable>
+        <input type = "text", name = "username" value="...", placeholder= "Nhap username"/>
+        <label>Nhập Password</lable>
+        <input type = "password" name = "password", value="...",placeholder= "Nhap Password"/>
+        <input type = "submit" value = "Log In"/>
+        <a href = {% url 'signup' %}>Sign Up</a>
+    </form>
+
+{% else %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li></li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <form method = "POST", action= "">
+        {% csrf_token %}
+        {{form.as_p}}
+        <input type = "submit" value = "Sign Up"/>
+    </form>
+{% endif %}
+{% endblock %}
