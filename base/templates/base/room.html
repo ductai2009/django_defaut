@@ -179,6 +179,9 @@
                     <a href= {% url 'UpLoadImg' request.user.id%} method='POST'>
                     <button class="btn btn--main" ,  type="submit">Dự đoán</button>
                     </a>
+                    <a href= {% url 'deep_sort'%} method='POST'>
+                      <button class="btn btn--main" ,  type="submit">deep Sort</button>
+                      </a>
                   <div class="room__info">
                     {{encode}}
                     <h3>Tên của bức ảnh: {{imgdata}}</h3>
