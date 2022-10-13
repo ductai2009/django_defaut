@@ -473,12 +473,8 @@ def stream(id):
         # cv2.putText(frame, str(count), org, font, 
             # fontScale, color, thickness, cv2.LINE_AA)
         det = results.pred[0]
-        
-        
         if det is not None and len(det):   
             xywhs = xyxy2xywh(det[:, 0:4])
-            
-            
             confs = det[:, 4]
             clss = det[:, 5]
             outputs = deepsort.update(xywhs.cpu(), confs.cpu(), clss.cpu(), frame)
@@ -490,7 +486,7 @@ def stream(id):
                     id = output[4]
                     
                     cls = output[5]
-                    count_deep(bboxes, w, h, id)
+                    # count_deep(bboxes, w, h, id)
                     c = int(cls)  # integer class
                     label = f'{id} {names[c]} {conf:.2f}'
                     annotator.box_label(bboxes, label, color=colors(c, True))
@@ -508,7 +504,7 @@ def stream(id):
     # stream.release()
     # cv2.destroyAllWindows()
 def count_deep(box, w, h, id):
-    # global count, count_id
+    global count, count_id
     center_circle = (int(box[0] + (box[2] - box[0])/2)) , (int(box[1] + (box[3] - box[1])/2))
     if (int(box[1] + (box[3] - box[1])/2)) > (h - 50):
         if id not in count_id:
