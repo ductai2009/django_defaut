@@ -3,9 +3,14 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .models import Room, Topic, Mesenge, User, image_64
 from .forms import RoomForm, UserForm, CreateUser,UpLoadImg
+# from .thead import Video_Feed
 from django.http import StreamingHttpResponse
-import cv2
 from PIL import Image as im
+from datetime import datetime, timedelta, timezone
+import urllib
+import m3u8
+import streamlink
+import time
 # from Yolov5_DeepSort_Pytorch.yolov5 import torch, yolov5
 import torch, yolov5
 from yolov5.utils.general import (check_img_size, non_max_suppression, scale_coords, 
@@ -21,18 +26,20 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
-import keras
+# import tensorflow.keras as keras
 import base64
 from PIL import Image
 import numpy as np
 import os
+import numpy as np
+import pafy
 import cv2
 import random
-from tensorflow.keras.models import load_model
+# from tensorflow.keras.models import load_model
 import tensorflow as tf
 from django.http import FileResponse
 from PIL import Image
-
+from threading import Thread
 
 
 
@@ -100,7 +107,7 @@ from PIL import Image
 #     predict = str(predict)
 #     return predict
 
-
+@login_required(login_url='login')
 def predict(request, pk):
     img = image_64.objects.get(id = pk)
     # path = 'static/images/img/'
@@ -121,6 +128,7 @@ def logOut(request):
     logout(request)
     return redirect('login')
 
+
 def signUp(request):
     form = CreateUser()
     if request.method == 'POST':
@@ -128,13 +136,15 @@ def signUp(request):
         if form.is_valid():
             user = form.save(commit=False)
             # user.username = user.username.lower()
-            user.save()
-            login(request, user)
-            return redirect('home')
+            # user.save()
+            # login(request, user)
+            # return redirect('home')
+            return HttpResponse("Chức năng tạm thời ngưng!")
         else:
             messages.error(request, 'Bạn đã sai ở đâu đó!')
     context = {'form': form}
     return render(request, 'base/login.html', context)
+
 
 def logIn(request):
     page = 'login_page'
@@ -157,6 +167,8 @@ def logIn(request):
     # context = {'user': user}
     return render(request, 'base/login.html', context)
 
+
+@login_required(login_url='login')
 def home(request):
     # if request.method == 'GET': 
     #     qq = request.GET.get('qq') if request.GET.get('qq') != None else ''
@@ -180,6 +192,8 @@ def home(request):
     context = {'rooms' : rooms, 'topics': topics, 'room_count': room_count,'message_home': message_home}
     return render(request, 'base/home.html',context)
 
+
+@login_required(login_url='login')
 def profile(request, pk):
     user = User.objects.get(id=pk)
     rooms = Room.objects.filter(host = user)
@@ -297,6 +311,8 @@ def room(request, pk):
     # os.remove(path + filename)
     return render(request, 'base/room.html', content)
 
+
+@login_required(login_url='login')
 def topicPage(request):
     q = request.GET.get('q') if request.GET.get('q') != None else ''
     rooms = Room.objects.filter(Q(topic__name__icontains = q) |
@@ -307,6 +323,8 @@ def topicPage(request):
     context = {'rooms': rooms,'topic':topic}
     return render(request, 'base/topics.html', context)
 
+
+@login_required(login_url='login')
 def upImage(request, pk):
     room = Room.objects.get(id= pk)
     room_all = Room.objects.all()
@@ -361,10 +379,9 @@ def upImage(request, pk):
 # def show_img():
 #     room = 
 #     return render(request,'base/show_img.html, ')
-
+@login_required(login_url='login')
 def upimg(request, pk):
     room = Room.objects.get(id = pk)
-    kp = 'ko'
     form = UpLoadImg(request.POST, request.FILES)
     if request.method == 'POST':
         form = UpLoadImg(request.POST, request.FILES)
@@ -377,15 +394,14 @@ def upimg(request, pk):
             name = request.POST.get('nameimg'),
             image = request.FILES.get('images'),
         )
-        return redirect('UpLoadImg', room.id)
-    context = {'kp':kp}
-    return render(request, 'base/upimage.html', context)
-
-def deep_sort(request):
-    return render(request, 'base/deep_sort.html')
+        return redirect('UpLoadImg',pk = room.id)
+    return render(request, 'base/upimage.html')
 
 
 
+
+
+@login_required(login_url='login')
 def activityUser(request):
     rooms = Room.objects.all()
     messanges_hoom = Mesenge.objects.all()[0:5]
@@ -409,26 +425,42 @@ deepsort = DeepSort('osnet_x0_25',
                     max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
                     )
 # Get names and colors
-names = model.module.names if hasattr(model, 'module') else model.names
-import numpy as np
 count = 0
 count_id = []
-def stream():
-    cap = cv2.VideoCapture("videos/Traffic.mp4")
-    model.conf = 0.45
+
+names = model.module.names if hasattr(model, 'module') else model.names
+
+
+from vidgear.gears import CamGear
+import cv2, time
+
+def stream(id):
+    # url = "https://www.youtube.com/watch?v=DOrDtgdZzMo"
+    # time.sleep(2)
+    # stream = CamGear(source="https://www.youtube.com/watch?v=DnokJ5jVb40", stream_mode = True, logging=True).start()
+
+    stream = cv2.VideoCapture("videos/Traffic.mp4")
+    model.conf = 0.7
     model.iou = 0.5
-    model.classes = [2]
+    model.classes = [0]
     # model.classes = [0,64,39]
+    startTime = 0
     while True:
-        ret, frame = cap.read()
-        frame = cv2.resize(frame, (500,250))
-        if not ret:
-            print("Error: failed to capture image")
-            break
+        # ret, frame = cap.read()
+        _,frame = stream.read()
+        frame = cv2.resize(frame, (500, 250))
+        nowTime = time.time()
+        fps = 1 /(nowTime - startTime)
+        startTime = nowTime
+        
+        # frame = cv2.resize(frame, (500,250))
+        # if not ret:
+        #     print("Error: failed to capture image")
+        #     break
         
         results = model(frame, augment=True)
         # proccess
-        annotator = Annotator(frame, line_width=1, pil=not ascii) 
+        annotator = Annotator(frame, line_width=2, pil=not ascii) 
         w, h = frame.shape[1], frame.shape[0]
         color=(0,255,0)
         start_point = (0, h-50)
@@ -445,14 +477,18 @@ def stream():
         
         if det is not None and len(det):   
             xywhs = xyxy2xywh(det[:, 0:4])
+            
+            
             confs = det[:, 4]
             clss = det[:, 5]
             outputs = deepsort.update(xywhs.cpu(), confs.cpu(), clss.cpu(), frame)
             
             if len(outputs) > 0:
                 for j, (output, conf) in enumerate(zip(outputs, confs)):
+                    
                     bboxes = output[0:4]
                     id = output[4]
+                    
                     cls = output[5]
                     count_deep(bboxes, w, h, id)
                     c = int(cls)  # integer class
@@ -460,21 +496,47 @@ def stream():
                     annotator.box_label(bboxes, label, color=colors(c, True))
         else:
             deepsort.increment_ages()
-
+        cv2.putText(frame, "fps: " + str(int(fps)), (100,50), font, 
+            fontScale, color, thickness, cv2.LINE_AA)
         im0 = annotator.result()    
         image_bytes = cv2.imencode('.jpg', im0)[1].tobytes()
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + image_bytes + b'\r\n') 
-         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+               b'Content-Type: image/jpeg\r\n\r\n' + image_bytes + b'\r\n')
+        if id == 1:
             break
+        
+    # stream.release()
+    # cv2.destroyAllWindows()
 def count_deep(box, w, h, id):
-    global count, count_id
+    # global count, count_id
     center_circle = (int(box[0] + (box[2] - box[0])/2)) , (int(box[1] + (box[3] - box[1])/2))
     if (int(box[1] + (box[3] - box[1])/2)) > (h - 50):
         if id not in count_id:
             count += 1
             count_id.append(id)
-            
+
+
+# # @login_required(login_url='login')
+# # def video_feed(request):
+# #     # q = request.GET.get('q')
+# #     t = Video_Feed(count, count_id).start()
+# #     # if q is None:
+# #     #     chay = False
+# #     # # thread_video = Thread(target=stream())
+# #     # # global count, count_id
+# #     # # count = 0
+# #     # # count_id = []
+# #     # # time.sleep(1)
+# #     return StreamingHttpResponse(t, content_type='multipart/x-mixed-replace; boundary=frame') 
+
+# @login_required(login_url='login')
+def deep_sort(request):
+    return render(request, 'base/deep_sort.html')
+
+
+
 def video_feed(request):
-    return StreamingHttpResponse(stream(), content_type='multipart/x-mixed-replace; boundary=frame') 
+    id = 0
+    if request.method == 'POST':
+        id = 1
+    return StreamingHttpResponse(stream(id), content_type='multipart/x-mixed-replace; boundary=frame') 

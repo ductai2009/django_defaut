@@ -26,10 +26,14 @@
                     <img style="max-width: 100%; max-height: 100%;" src="{%url 'video_feed'%}" alt ='' >
                     yolov5
                     </img>
+                    {% comment %} <a href = {% url "deep_sort" %}?q='end'> <span></span></a> {% endcomment %}
+                    
                     {% comment %} <img src="{% url 'video_feed' %}" alt="">yolov5</img> {% endcomment %}
                     {% comment %} <p>{{photo.description}}</p> {% endcomment %}
                 </div>
-
+                <a method='POST', href = {% url "home" %}>
+                    <button class="btn btn--main",  type="submit">deep Sort</button>
+                </a>
             </div>
         </div>
     </div>

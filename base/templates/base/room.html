@@ -171,7 +171,7 @@
         <div class="participants__list scroll">
 
           <div class="room__box scroll">
-            <img class="contain" src="../../images/img/{{imgdata}}" alt="{{imgdata}}" style="width:500px;height:700px">
+            <img class="contain" src="../../images/img/{{imgdata}}" alt= style="width:500px;height:700px">
             <div class="room__header scroll">
               <div class="room__hosted">
               </div>
@@ -183,9 +183,9 @@
                       <button class="btn btn--main" ,  type="submit">deep Sort</button>
                       </a>
                   <div class="room__info">
-                    {{encode}}
+                    {% comment %} {{encode}} {% endcomment %}
                     <h3>Tên của bức ảnh: {{imgdata}}</h3>
-                    {{text64}}
+                    {% comment %} {{text64}} {% endcomment %}
                   </div>
                 </div>
           </div>
