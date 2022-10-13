@@ -437,17 +437,17 @@ import cv2, time
 def stream(id):
     # url = "https://www.youtube.com/watch?v=DOrDtgdZzMo"
     # time.sleep(2)
-    # stream = CamGear(source="https://www.youtube.com/watch?v=DnokJ5jVb40", stream_mode = True, logging=True).start()
+    stream = CamGear(source="https://www.youtube.com/watch?v=DnokJ5jVb40", stream_mode = True, logging=True).start()
 
-    stream = cv2.VideoCapture("videos/Traffic.mp4")
+    # stream = cv2.VideoCapture("videos/Traffic.mp4")
     model.conf = 0.7
     model.iou = 0.5
     model.classes = [0]
     # model.classes = [0,64,39]
     startTime = 0
     while True:
-        # ret, frame = cap.read()
-        _,frame = stream.read()
+        # ret, frame = stream.read()
+        frame = stream.read()
         frame = cv2.resize(frame, (500, 250))
         nowTime = time.time()
         fps = 1 /(nowTime - startTime)
@@ -465,13 +465,13 @@ def stream(id):
         color=(0,255,0)
         start_point = (0, h-50)
         end_point = (w, h-50)
-        cv2.line(frame, start_point, end_point, color, thickness=2)
+        # cv2.line(frame, start_point, end_point, color, thickness=2)
         thickness = 1
         org = (50, 50)
         font = cv2.FONT_HERSHEY_SIMPLEX
         fontScale = 1
-        cv2.putText(frame, str(count), org, font, 
-            fontScale, color, thickness, cv2.LINE_AA)
+        # cv2.putText(frame, str(count), org, font, 
+            # fontScale, color, thickness, cv2.LINE_AA)
         det = results.pred[0]
         
         
@@ -530,13 +530,93 @@ def count_deep(box, w, h, id):
 # #     return StreamingHttpResponse(t, content_type='multipart/x-mixed-replace; boundary=frame') 
 
 # @login_required(login_url='login')
-def deep_sort(request):
-    return render(request, 'base/deep_sort.html')
-
-
+def deep_sort(request, pk):
+    room = Room.objects.get(id = pk)
+    if room.id == 1:
+        return render(request, 'base/deep_sort.html')
+    if room.id == 2:
+        return render(request, 'base/video_test.html')
 
 def video_feed(request):
     id = 0
     if request.method == 'POST':
         id = 1
     return StreamingHttpResponse(stream(id), content_type='multipart/x-mixed-replace; boundary=frame') 
+
+
+def video_test(id):
+    # url = "https://www.youtube.com/watch?v=DOrDtgdZzMo"
+    # time.sleep(2)
+    # stream = CamGear(source="https://www.youtube.com/watch?v=DnokJ5jVb40", stream_mode = True, logging=True).start()
+
+    stream = cv2.VideoCapture("videos/Traffic.mp4")
+    model.conf = 0.7
+    model.iou = 0.5
+    model.classes = [2]
+    # model.classes = [0,64,39]
+    startTime = 0
+    while True:
+        ret, frame = stream.read()
+        # frame = stream.read()
+        frame = cv2.resize(frame, (500, 250))
+        nowTime = time.time()
+        fps = 1 /(nowTime - startTime)
+        startTime = nowTime
+        
+        # frame = cv2.resize(frame, (500,250))
+        # if not ret:
+        #     print("Error: failed to capture image")
+        #     break
+        
+        results = model(frame, augment=True)
+        # proccess
+        annotator = Annotator(frame, line_width=2, pil=not ascii) 
+        w, h = frame.shape[1], frame.shape[0]
+        color=(0,255,0)
+        start_point = (0, h-50)
+        end_point = (w, h-50)
+        cv2.line(frame, start_point, end_point, color, thickness=1)
+        thickness = 1
+        org = (50, 50)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 1
+        cv2.putText(frame, str(count), org, font, 
+            fontScale, color, thickness, cv2.LINE_AA)
+        det = results.pred[0]
+        
+        
+        if det is not None and len(det):   
+            xywhs = xyxy2xywh(det[:, 0:4])
+            
+            
+            confs = det[:, 4]
+            clss = det[:, 5]
+            outputs = deepsort.update(xywhs.cpu(), confs.cpu(), clss.cpu(), frame)
+            
+            if len(outputs) > 0:
+                for j, (output, conf) in enumerate(zip(outputs, confs)):
+                    
+                    bboxes = output[0:4]
+                    id = output[4]
+                    
+                    cls = output[5]
+                    count_deep(bboxes, w, h, id)
+                    c = int(cls)  # integer class
+                    label = f'{id} {names[c]} {conf:.2f}'
+                    annotator.box_label(bboxes, label, color=colors(c, True))
+        else:
+            deepsort.increment_ages()
+        cv2.putText(frame, "fps: " + str(int(fps)), (100,50), font, 
+            fontScale, color, thickness, cv2.LINE_AA)
+        im0 = annotator.result()    
+        image_bytes = cv2.imencode('.jpg', im0)[1].tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + image_bytes + b'\r\n')
+        if id == 1:
+            break
+        
+def video_feed_video(request):
+    id = 0
+    if request.method == 'POST':
+        id = 1
+    return StreamingHttpResponse(video_test(id), content_type='multipart/x-mixed-replace; boundary=frame') 

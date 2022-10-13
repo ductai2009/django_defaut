@@ -20,6 +20,7 @@ urlpatterns = [
     path('upimage/<str:pk>', views.upImage, name = 'UpLoadImg'),
     path('upimg/<str:pk>', views.upimg, name = 'upimg'),
     path('predict/<str:pk>', views.predict, name = 'predict'),
-    path('deep_sort', views.deep_sort, name = 'deep_sort'),
+    path('deep_sort/<str:pk>', views.deep_sort, name = 'deep_sort'),
     path('video_feed', views.video_feed, name = 'video_feed'),
+    path('video_feed_test', views.video_feed_video, name = 'video_feed_test'),
 ]
