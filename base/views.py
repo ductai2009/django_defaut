@@ -398,9 +398,6 @@ def upimg(request, pk):
     return render(request, 'base/upimage.html')
 
 
-
-
-
 @login_required(login_url='login')
 def activityUser(request):
     rooms = Room.objects.all()
@@ -532,7 +529,7 @@ def deep_sort(request, pk):
     #     return render(request, 'base/deep_sort.html')
     if room.id == 1:
         return render(request, 'base/video_test.html')
-    else 
+    else:
         return render(request, 'base/home.html')
 
 # def video_feed(request):
