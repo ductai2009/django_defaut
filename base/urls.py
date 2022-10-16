@@ -20,7 +20,8 @@ urlpatterns = [
     path('upimage/<str:pk>', views.upImage, name = 'UpLoadImg'),
     path('upimg/<str:pk>', views.upimg, name = 'upimg'),
     path('predict/<str:pk>', views.predict, name = 'predict'),
-    path('deep_sort/<str:pk>', views.deep_sort, name = 'deep_sort'),
+    path('choose_funsion/<str:pk>', views.choose_funsion, name = 'choose_funsion'),
     # path('video_feed', views.video_feed, name = 'video_feed'),
     path('video_feed_test', views.video_feed_video, name = 'video_feed_test'),
+    path('capChaTron/<str:pk>', views.capChaTron, name = 'capChaTron'),
 ]

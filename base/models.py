@@ -43,6 +43,7 @@ class image_64(models.Model):
     def __str__(self):
         return self.name
     
+    
 class Mesenge(models.Model):
     # one room have many mesange
     user = models.ForeignKey(User,on_delete=models.CASCADE)
@@ -52,6 +53,22 @@ class Mesenge(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.body[0:50]
+    class Meta:
+        # sắp xếp theo thứ tự mới đến cũ của các bài đăng 
+        ordering = ['-updated', '-created']
+      
+           
+class CapChaTikTok(models.Model):
+    # one room have many mesange
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    room = models.ForeignKey(Room,on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, default= 'null')
+    codeImg_small = models.TextField(max_length=300000, default= 'null')
+    codeImg_big = models.TextField(max_length=300000, default= 'null')
+    updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.name
     class Meta:
         # sắp xếp theo thứ tự mới đến cũ của các bài đăng 
         ordering = ['-updated', '-created']

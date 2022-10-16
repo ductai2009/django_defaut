@@ -1,8 +1,9 @@
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import Room, Topic, Mesenge, User, image_64
+from .models import Room, Topic, Mesenge, User, image_64, CapChaTikTok
 from .forms import RoomForm, UserForm, CreateUser,UpLoadImg
+from .funsion_base import *
 # from .thead import Video_Feed
 from django.http import StreamingHttpResponse
 from PIL import Image as im
@@ -29,14 +30,16 @@ import base64
 from PIL import Image
 import numpy as np
 import os
+import io
 import numpy as np
 import cv2
 import random
-# from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import array_to_img
 import tensorflow as tf
 from django.http import FileResponse
-from PIL import Image
 from threading import Thread
+from io import BytesIO
 
 
 
@@ -129,18 +132,19 @@ def logOut(request):
 def signUp(request):
     form = CreateUser()
     if request.method == 'POST':
-        form = CreateUser(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
+        # form = CreateUser(request.POST)
+        # if form.is_valid():
+        #     user = form.save(commit=False)
             # user.username = user.username.lower()
             # user.save()
             # login(request, user)
             # return redirect('home')
-            return HttpResponse("Chức năng tạm thời ngưng!")
-        else:
-            messages.error(request, 'Bạn đã sai ở đâu đó!')
+            
+        # else:
+        #     messages.error(request, 'Bạn đã sai ở đâu đó!')
+        return HttpResponse("Chức năng tạm thời ngưng!")
     context = {'form': form}
-    return render(request, 'base/login.html', context)
+    return render(request, 'base/logIn_new.html', context)
 
 
 def logIn(request):
@@ -148,12 +152,12 @@ def logIn(request):
     if request.user.is_authenticated:
         return redirect('home')
     if request.method == 'POST':
-        username = request.POST.get('username').lower()
+        username = request.POST.get('email').lower()
         password = request.POST.get('password')
         try:
             user = User.objects.get(username = username)
         except:
-            messages.error(request, 'Username này không tồn tại!')
+            messages.error(request, 'Rất... xin chàooooo!')
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
@@ -162,7 +166,7 @@ def logIn(request):
             messages.error(request, 'Lỗi rồi!')
     context = {'page': page}
     # context = {'user': user}
-    return render(request, 'base/login.html', context)
+    return render(request, 'base/logIn_new.html', context)
 
 
 @login_required(login_url='login')
@@ -204,20 +208,21 @@ def profile(request, pk):
 @login_required(login_url='login')
 def create_room(request):
     form = RoomForm()
-    
-    
     topics = Topic.objects.all()
-    if request.method == 'POST':
-        form = RoomForm(request.POST)
-        name_topic = request.POST.get('topic')
-        topic, created = Topic.objects.get_or_create(name = name_topic)
-        Room.objects.create(
-            host = request.user,
-            topic = topic,
-            name = request.POST.get('name'),
-            description = request.POST.get('description'),
-        )
-        return redirect('home')
+    if request.user.username == "ductai":
+        if request.method == 'POST':
+            form = RoomForm(request.POST)
+            name_topic = request.POST.get('topic')
+            topic, created = Topic.objects.get_or_create(name = name_topic)
+            Room.objects.create(
+                host = request.user,
+                topic = topic,
+                name = request.POST.get('name'),
+                description = request.POST.get('description'),
+            )
+            return redirect('home')
+    else:
+        return HttpResponse("Chức năng này chỉ có admin được phép thao tác! sr very much!")
     context = {'form': form, 'topics':topics}
     return render(request, 'base/create_room.html', context)
 
@@ -226,8 +231,8 @@ def updateRoom(request, pk):
     room = Room.objects.get(id = pk)
     form = RoomForm(instance=room)
     topics = Topic.objects.all()
-    if request.user != room.host:
-        return HttpResponse("Bạn không có quyền thực hiện thao tác này!!")
+    if request.user != "ductai":
+        return HttpResponse("Chỉ admin mới có quyền thực hiện thao tác này!!")
     if request.method == 'POST':
         name_topic = request.POST.get('topic')
         topic, created = Topic.objects.get_or_create(name = name_topic)
@@ -243,11 +248,12 @@ def updateRoom(request, pk):
 @login_required(login_url='login')
 def deteleRoom(request, pk):
     room = Room.objects.get(id = pk)
-    if request.method == 'POST':
+
+    if request.user != "ductai":
+        return HttpResponse("Bạn không có quyền thực hiện thao tác này!!")
+    elif request.method == 'POST':
         room.delete()
         return redirect('home')
-    if request.user != room.host:
-        return HttpResponse("Bạn không có quyền thực hiện thao tác này!!")
     context = {'room': room}
     return render(request, 'base/delete.html', context)
 
@@ -265,7 +271,9 @@ def deteleMessange(request, pk):
 def updateUser(request, pk):
     user = User.objects.get(id = pk)
     form = UserForm(instance=user)
-    if request.method == 'POST':
+    if request.user != user.username:
+        return HttpResponse("Bạn không có quyền thực hiện thao tác này!!")
+    elif request.method == 'POST':
         form = UserForm(request.POST, request.FILES,  instance=user)
         if form.is_valid():
             form.save()
@@ -508,7 +516,6 @@ def count_deep(box, w, h, id):
             count += 1
             count_id.append(id)
 
-
 # # @login_required(login_url='login')
 # # def video_feed(request):
 # #     # q = request.GET.get('q')
@@ -523,11 +530,14 @@ def count_deep(box, w, h, id):
 # #     return StreamingHttpResponse(t, content_type='multipart/x-mixed-replace; boundary=frame') 
 
 @login_required(login_url='login')
-def deep_sort(request, pk):
+def choose_funsion(request, pk):
     room = Room.objects.get(id = pk)
-    # if room.id == 2:
-    #     return render(request, 'base/deep_sort.html')
-    if room.id == 1:
+    
+    topic = str(room.topic)
+    if topic == "CapChaTikTok":
+        # return render(request, 'base/capChaTron.html')
+        return redirect('capChaTron', pk = room.id)
+    elif topic == "YoloV5_DeepSort":
         return render(request, 'base/video_test.html')
     else:
         return render(request, 'base/home.html')
@@ -540,10 +550,6 @@ def deep_sort(request, pk):
 
 
 def video_test(id):
-    # url = "https://www.youtube.com/watch?v=DOrDtgdZzMo"
-    # time.sleep(2)
-    # stream = CamGear(source="https://www.youtube.com/watch?v=DnokJ5jVb40", stream_mode = True, logging=True).start()
-
     stream = cv2.VideoCapture("videos/Traffic.mp4")
     model.conf = 0.7
     model.iou = 0.5
@@ -552,19 +558,11 @@ def video_test(id):
     startTime = 0
     while True:
         ret, frame = stream.read()
-        # frame = stream.read()
         frame = cv2.resize(frame, (500, 250))
         nowTime = time.time()
         fps = 1 /(nowTime - startTime)
         startTime = nowTime
-        
-        # frame = cv2.resize(frame, (500,250))
-        # if not ret:
-        #     print("Error: failed to capture image")
-        #     break
-        
         results = model(frame, augment=True)
-        # proccess
         annotator = Annotator(frame, line_width=2, pil=not ascii) 
         w, h = frame.shape[1], frame.shape[0]
         color=(0,255,0)
@@ -582,18 +580,14 @@ def video_test(id):
         
         if det is not None and len(det):   
             xywhs = xyxy2xywh(det[:, 0:4])
-            
-            
             confs = det[:, 4]
             clss = det[:, 5]
             outputs = deepsort.update(xywhs.cpu(), confs.cpu(), clss.cpu(), frame)
             
             if len(outputs) > 0:
                 for j, (output, conf) in enumerate(zip(outputs, confs)):
-                    
                     bboxes = output[0:4]
                     id = output[4]
-                    
                     cls = output[5]
                     count_deep(bboxes, w, h, id)
                     c = int(cls)  # integer class
@@ -611,7 +605,82 @@ def video_test(id):
             break
         
 def video_feed_video(request):
+    global count, count_id
     id = 0
     if request.method == 'POST':
         id = 1
+        count = 0
+        count_id = []
     return StreamingHttpResponse(video_test(id), content_type='multipart/x-mixed-replace; boundary=frame') 
+
+
+def capChaTron(request, pk):
+    room = Room.objects.get(id = pk)
+    name = "predictTikTok.png"
+    filename_small =  'img_small.png'
+    filename_big =  'img_big.png'
+    small_img = None
+    path = 'static/images/img/'
+    if request.method == 'POST':
+        # form = UpCapChaTikTok(request.POST, request.FILES)
+        img_small = request.FILES.get('image_small').read()
+        img_big = request.FILES.get('image_big').read()
+        
+        code_small = base64.b64encode(img_small)
+        code_big = base64.b64encode(img_big)
+        
+        code_small = code_small.decode('utf-8')
+        code_big = code_big.decode('utf-8')
+        
+        CapChaTikTok.objects.create(
+            user = request.user,
+            room = room,
+            name = get_random_string(12),
+            codeImg_small = code_small,
+            codeImg_big = code_big,
+        )
+        imgdata_small = "null"
+        imgdata_big = "null"
+        try:
+            
+            imgdata_small = base64.b64decode(code_small)
+            imgdata_big = base64.b64decode(code_big)
+            
+            with open(filename_big, 'wb') as f:
+                f.write(imgdata_big)
+                f.close()
+                print("tessssssssst2")
+                
+            with open(filename_small, 'wb') as f:
+                f.write(imgdata_small)
+                f.close()
+                print("tessssssssst1")    
+                
+        except: 
+            pass
+        
+        imgdata_small = Image.open(io.BytesIO(imgdata_small))
+        imgdata_small = imgdata_small.convert('RGB')
+        
+        imgdata_big = Image.open(io.BytesIO(imgdata_big))
+        imgdata_big = imgdata_big.convert('RGB')
+
+        small = imgdata_small.resize((211,211))
+        big = imgdata_big.resize((347,347))
+        
+        small_img = np.array(small, dtype=np.uint8)
+        big_img = np.array(big, dtype=np.uint8)
+        
+        
+        small_img=array_to_img(small_img)
+        big_img=array_to_img(big_img)
+        
+        
+        img = capChaTronTikTok(small_img, big_img)
+        
+        img = img.save(path + name)
+        return redirect('capChaTron', pk = room.id)
+    
+    context = {'room':room, 'file_pre': name}
+    return render(request,'base/capChaTron.html',context)
+    

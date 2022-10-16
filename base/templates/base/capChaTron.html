@@ -1,0 +1,53 @@
+{% block content %}
+{%load static %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Form Đăng Nhập</title>
+    {% comment %} <link rel="stylesheet" type="text/css" href="style.css"> {% endcomment %}
+    <link rel="stylesheet" href= {% static "styles/css_capChaTron.css" %} />
+    </head>
+
+<body>
+
+<div class='container'>
+    <div class='window'>
+      <div class='order-info'>
+        <div class='order-info-content'>
+          <h2>Kết quả</h2>
+                  <div class='line'></div>
+
+    <img  src="../../images/img/{{file_pre}}"  style="width:300px;height:300px">
+
+      </div>
+    </div>
+          <div class='credit-info'>
+
+        <form method='POST' action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class='credit-info-content'>
+
+              <img src="{% static 'images/tiktok.jpg' %}" height='80' class='credit-card-image' id='credit-card-image'></img>
+              Ảnh lớn
+              <input required name="image_big" type="file" multiple class="input-field">
+              <hr>
+              <hr>
+              <hr>
+              <hr>
+              <hr>
+              {% comment %} <input class='input-field'></input> {% endcomment %}
+              Ảnh nhỏ
+              <input required name="image_small" type="file" multiple class="input-field">
+
+              <button class='pay-btn'>Predict</button>
+  
+            </div>
+        </form>
+  
+          </div>
+        </div>
+  </div>
+  <script src="{%static 'js/js_capChaTron.js' %}"></script>
+</body>
+</html>
+{% endblock  %}

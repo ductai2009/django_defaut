@@ -1,5 +1,5 @@
 
-from .models import Room, User, image_64
+from .models import Room, User, image_64, CapChaTikTok
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 
@@ -25,3 +25,5 @@ class UserForm(ModelForm):
         model = User
         fields = ['username','name', 'email', 'avatar','about']
         
+
+  

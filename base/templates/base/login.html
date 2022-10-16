@@ -11,17 +11,17 @@
             </div>
           </div>
           <div class="layout__body">
-            <h2 class="auth__tagline">Xin mời nhập tài khoản ạ !</h2>
+            <h2 class="auth__tagline">Bạn cần 1 tài khoản để đăng nhập!</h2>
 
             <form class="form" action="", method = 'POST'>
               {% csrf_token %}
               <div class="form__group form__group">
                 <label for="room_name">Email</label>
-                <input id="username" value = "Dạ..." name="username" type="text" placeholder="Tài khoản ..." />
+                <input id="username" value = "Tài khoản ..." name="username" type="text" placeholder="Tài khoản ..." />
               </div>
               <div class="form__group">
                 <label for="password">Password</label>
-                <input value = "Thưa..."
+                <input value = "Mật khẩu ..."
                   id="password"
                   name="password"
                   type="password"
@@ -62,6 +62,7 @@
         <div class="layout__box">
           <div class="layout__boxHeader">
             <div class="layout__boxTitle">
+
               <h3>Đăng Ký</h3>
             </div>
           </div>
@@ -77,6 +78,7 @@
               </div>
               {% endfor %}
               <h1>Lưu ý: Mật khẩu phải gồm: chữ cái-số-ký tự đặc biệt nha!!</h1>
+              <h1>Ví dụ: Matkhaudenho123@</h1>
               <button class="btn btn--main" type="submit">
                 <svg
                   version="1.1"
