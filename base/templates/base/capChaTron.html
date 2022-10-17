@@ -17,7 +17,9 @@
           <h2>Kết quả</h2>
                   <div class='line'></div>
 
-    <img  src="../../images/img/{{file_pre}}"  style="width:300px;height:300px">
+    {% comment %} <img  src="../../images/img/{{file_pre}}"  style="width:300px;height:300px">
+    <p>Img base64</p> {% endcomment %}
+      <img src="data:image/png;base64,{{img_byte}}" alt=" Img Predict" />
 
       </div>
     </div>
@@ -35,13 +37,14 @@
               <hr>
               <hr>
               <hr>
-              {% comment %} <input class='input-field'></input> {% endcomment %}
               Ảnh nhỏ
               <input required name="image_small" type="file" multiple class="input-field">
 
               <button class='pay-btn'>Predict</button>
+              
   
             </div>
+            <a href={% url 'home'%}>Home</a>
         </form>
   
           </div>

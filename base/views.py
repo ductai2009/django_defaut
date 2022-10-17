@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from .models import Room, Topic, Mesenge, User, image_64, CapChaTikTok
 from .forms import RoomForm, UserForm, CreateUser,UpLoadImg
 from .funsion_base import *
+from .thead import *
 # from .thead import Video_Feed
 from django.http import StreamingHttpResponse
 from PIL import Image as im
@@ -157,7 +158,8 @@ def logIn(request):
         try:
             user = User.objects.get(username = username)
         except:
-            messages.error(request, 'Rất... xin chàooooo!')
+            # messages.error(request, 'Rất... xin chàooooo!')
+            pass
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
@@ -271,7 +273,7 @@ def deteleMessange(request, pk):
 def updateUser(request, pk):
     user = User.objects.get(id = pk)
     form = UserForm(instance=user)
-    if request.user != user.username:
+    if request.user.username != user.username:
         return HttpResponse("Bạn không có quyền thực hiện thao tác này!!")
     elif request.method == 'POST':
         form = UserForm(request.POST, request.FILES,  instance=user)
@@ -616,71 +618,29 @@ def video_feed_video(request):
 
 def capChaTron(request, pk):
     room = Room.objects.get(id = pk)
-    name = "predictTikTok.png"
-    filename_small =  'img_small.png'
-    filename_big =  'img_big.png'
     small_img = None
-    path = 'static/images/img/'
+    code_pre = None
+    img_byte = io.BytesIO()
+    img_capCha = None
+    # path = 'static/images/img/'
+    dem = 0
     if request.method == 'POST':
-        # form = UpCapChaTikTok(request.POST, request.FILES)
-        img_small = request.FILES.get('image_small').read()
-        img_big = request.FILES.get('image_big').read()
-        
-        code_small = base64.b64encode(img_small)
-        code_big = base64.b64encode(img_big)
-        
-        code_small = code_small.decode('utf-8')
-        code_big = code_big.decode('utf-8')
-        
-        CapChaTikTok.objects.create(
-            user = request.user,
-            room = room,
-            name = get_random_string(12),
-            codeImg_small = code_small,
-            codeImg_big = code_big,
-        )
-        imgdata_small = "null"
-        imgdata_big = "null"
-        try:
-            
-            imgdata_small = base64.b64decode(code_small)
-            imgdata_big = base64.b64decode(code_big)
-            
-            with open(filename_big, 'wb') as f:
-                f.write(imgdata_big)
-                f.close()
-                print("tessssssssst2")
-                
-            with open(filename_small, 'wb') as f:
-                f.write(imgdata_small)
-                f.close()
-                print("tessssssssst1")    
-                
-        except: 
-            pass
-        
-        imgdata_small = Image.open(io.BytesIO(imgdata_small))
-        imgdata_small = imgdata_small.convert('RGB')
-        
-        imgdata_big = Image.open(io.BytesIO(imgdata_big))
-        imgdata_big = imgdata_big.convert('RGB')
-
-        small = imgdata_small.resize((211,211))
-        big = imgdata_big.resize((347,347))
-        
-        small_img = np.array(small, dtype=np.uint8)
-        big_img = np.array(big, dtype=np.uint8)
-        
-        
-        small_img=array_to_img(small_img)
-        big_img=array_to_img(big_img)
-        
-        
-        img = capChaTronTikTok(small_img, big_img)
-        
-        img = img.save(path + name)
-        return redirect('capChaTron', pk = room.id)
-    
-    context = {'room':room, 'file_pre': name}
+        name_img = get_random_string(15)
+        CapChaTikTokTron(request.FILES.get('image_small').read(),
+                            request.FILES.get('image_big').read(),
+                            room,
+                            request.user,
+                            name_img).start()
+        while True:
+            try:
+                img_capCha = CapChaTikTok.objects.get(name = name_img)
+                code_pre = img_capCha.codeImg_pre
+                dem = 1
+            except:
+                pass
+            if dem == 1:
+                break
+        print("predict capchatitok tron <main>: ",type(code_pre))
+    context = {'room':room, 'img_byte':code_pre}
     return render(request,'base/capChaTron.html',context)
     

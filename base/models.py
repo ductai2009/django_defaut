@@ -65,6 +65,7 @@ class CapChaTikTok(models.Model):
     name = models.CharField(max_length=200, default= 'null')
     codeImg_small = models.TextField(max_length=300000, default= 'null')
     codeImg_big = models.TextField(max_length=300000, default= 'null')
+    codeImg_pre = models.TextField(max_length=300000, default= 'null')
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     def __str__(self):
