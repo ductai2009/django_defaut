@@ -1,11 +1,14 @@
 
+from multiprocessing import managers
 from django.shortcuts import render, redirect
+from rest_framework.decorators import api_view
 from django.http import HttpResponse
-from .models import Room, Topic, Mesenge, User, image_64, CapChaTikTok
-from .forms import RoomForm, UserForm, CreateUser,UpLoadImg
+from .models import *
+from .forms import *
+from .api import *
 from .funsion_base import *
+from .webCam import Webcam
 from .thead import *
-# from .thead import Video_Feed
 from django.http import StreamingHttpResponse
 from PIL import Image as im
 from datetime import datetime, timedelta, timezone
@@ -19,7 +22,7 @@ from yolov5.utils.torch_utils import select_device, time_sync
 from yolov5.utils.plots import Annotator, colors
 from deep_sort.utils.parser import get_config
 from deep_sort.deep_sort import DeepSort
-from .modelML import predict_img
+from .modelML import *
 # from Yolov5_DeepSort_Pytorch.track import pre
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
@@ -270,6 +273,8 @@ def deteleMessange(request, pk):
         return redirect('home')
     context = {'message': message}
     return render(request, 'base/delete.html', context)
+
+@login_required(login_url='login')
 def updateUser(request, pk):
     user = User.objects.get(id = pk)
     form = UserForm(instance=user)
@@ -282,6 +287,8 @@ def updateUser(request, pk):
             return redirect('profile', pk = user.id)
     context = {'user':user, 'form':form}
     return render(request, 'base/edit-user.html', context)
+
+@login_required(login_url='login')
 def room(request, pk):
     code_base64 = 0
     room = Room.objects.get(id = pk)
@@ -531,16 +538,27 @@ def count_deep(box, w, h, id):
 # #     # # time.sleep(1)
 # #     return StreamingHttpResponse(t, content_type='multipart/x-mixed-replace; boundary=frame') 
 
-@login_required(login_url='login')
+# api
+apiCapcha = ApiCapcha.as_view()
+apiUser = ApiUser.as_view()
+apiUserAll = ApiUserAll.as_view()
+apiCapchaAll = ApiCapchaAll.as_view()
+
+
 def choose_funsion(request, pk):
     room = Room.objects.get(id = pk)
     
-    topic = str(room.topic)
-    if topic == "CapChaTikTok":
+    name = str(room.name)
+    if name == "Cap Cha Tik Tok":
         # return render(request, 'base/capChaTron.html')
         return redirect('capChaTron', pk = room.id)
-    elif topic == "YoloV5_DeepSort":
+    
+    elif name == "Deep sort":
         return render(request, 'base/video_test.html')
+    
+    elif name == "Web Cam DeTect":
+        return render(request, 'base/video_webcam.html')
+    
     else:
         return render(request, 'base/home.html')
 
@@ -551,7 +569,7 @@ def choose_funsion(request, pk):
 #     return StreamingHttpResponse(stream(id), content_type='multipart/x-mixed-replace; boundary=frame') 
 
 
-def video_test(id):
+def video_test(dem):
     stream = cv2.VideoCapture("videos/Traffic.mp4")
     model.conf = 0.7
     model.iou = 0.5
@@ -601,11 +619,12 @@ def video_test(id):
             fontScale, color, thickness, cv2.LINE_AA)
         im0 = annotator.result()    
         image_bytes = cv2.imencode('.jpg', im0)[1].tobytes()
+        if dem == 1:
+            break
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + image_bytes + b'\r\n')
-        if id == 1:
-            break
-        
+
+@login_required(login_url='login')
 def video_feed_video(request):
     global count, count_id
     id = 0
@@ -615,12 +634,10 @@ def video_feed_video(request):
         count_id = []
     return StreamingHttpResponse(video_test(id), content_type='multipart/x-mixed-replace; boundary=frame') 
 
-
+@login_required(login_url='login')
 def capChaTron(request, pk):
     room = Room.objects.get(id = pk)
-    small_img = None
     code_pre = None
-    img_byte = io.BytesIO()
     img_capCha = None
     # path = 'static/images/img/'
     dem = 0
@@ -633,6 +650,7 @@ def capChaTron(request, pk):
                             name_img).start()
         while True:
             try:
+                time.sleep(0.2)
                 img_capCha = CapChaTikTok.objects.get(name = name_img)
                 code_pre = img_capCha.codeImg_pre
                 dem = 1
@@ -644,3 +662,67 @@ def capChaTron(request, pk):
     context = {'room':room, 'img_byte':code_pre}
     return render(request,'base/capChaTron.html',context)
     
+@login_required(login_url='login')
+def video_feed(request):
+    id = 0
+    if request.method == 'POST':
+        id = 1
+    return StreamingHttpResponse(read_from_webcam(id), content_type="multipart/x-mixed-replace; boundary=frame" )
+    
+    
+def read_from_webcam(dem):
+    webcam = Webcam()
+    model.conf = 0.7
+    model.iou = 0.5
+    # model.classes = [0]
+    model.classes = [0,64,39]
+    startTime = 0
+    while True:
+        # Đọc ảnh từ class Webcam
+        image = next(webcam.get_frame())
+        
+        
+        frame = cv2.resize(image, (500, 250))
+        nowTime = time.time()
+        fps = 1 /(nowTime - startTime)
+        startTime = nowTime
+        results = model(frame, augment=True)
+        annotator = Annotator(frame, line_width=2, pil=not ascii)
+        w, h = frame.shape[1], frame.shape[0]
+        color=(0,255,0)
+        # start_point = (0, h-50)
+        # end_point = (w, h-50)
+        # cv2.line(frame, start_point, end_point, color, thickness=2)
+        thickness = 1
+        org = (50, 50)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 1
+        # cv2.putText(frame, str(count), org, font, 
+        #     fontScale, color, thickness, cv2.LINE_AA)
+        det = results.pred[0]
+        if det is not None and len(det):   
+            xywhs = xyxy2xywh(det[:, 0:4])
+            confs = det[:, 4]
+            clss = det[:, 5]
+            outputs = deepsort.update(xywhs.cpu(), confs.cpu(), clss.cpu(), frame)
+            
+            if len(outputs) > 0:
+                for j, (output, conf) in enumerate(zip(outputs, confs)):
+                    bboxes = output[0:4]
+                    id = output[4]
+                    cls = output[5]
+                    # count_deep(bboxes, w, h, id)
+                    c = int(cls)  # integer class
+                    label = f'{id} {names[c]} {conf:.2f}'
+                    annotator.box_label(bboxes, label, color=colors(c, True))
+        else:
+            deepsort.increment_ages()
+        cv2.putText(frame, "fps: " + str(int(fps)), (100,50), font, 
+            fontScale, color, thickness, cv2.LINE_AA)
+        im0 = annotator.result()    
+        image_bytes = cv2.imencode('.jpg', im0)[1].tobytes()
+        if dem == 1:
+            break
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + image_bytes + b'\r\n')
+        

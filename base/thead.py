@@ -1,3 +1,4 @@
+
 import threading, cv2
 from .funsion_base import *
 from .models import *
@@ -30,10 +31,8 @@ class CapChaTikTokTron(threading.Thread):
             nho = base64.b64decode(code_small)
             img_small = Image.open(io.BytesIO(nho))
 
-
             lon = base64.b64decode(code_big)
             img_big = Image.open(io.BytesIO(lon))
-
 
             small = img_small.convert('RGB')
             big = img_big.convert('RGB')
@@ -71,4 +70,4 @@ class CapChaTikTokTron(threading.Thread):
         except Exception as e:
             print("error capchatitok tron.")
             print(e)
-        return code_pre
+

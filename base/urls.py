@@ -1,5 +1,12 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
+
+from rest_framework.decorators import api_view
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
 
 
 urlpatterns = [
@@ -21,7 +28,16 @@ urlpatterns = [
     path('upimg/<str:pk>', views.upimg, name = 'upimg'),
     path('predict/<str:pk>', views.predict, name = 'predict'),
     path('choose_funsion/<str:pk>', views.choose_funsion, name = 'choose_funsion'),
-    # path('video_feed', views.video_feed, name = 'video_feed'),
+    path('video_feed', views.video_feed, name = 'video_feed'),
     path('video_feed_test', views.video_feed_video, name = 'video_feed_test'),
     path('capChaTron/<str:pk>', views.capChaTron, name = 'capChaTron'),
+    path('restApi_CapChaTron/<str:pk>', views.apiCapcha, name = 'apiCapchaTron'),
+    path('restApi_CapChaTronAll/', views.apiCapchaAll, name = 'apiCapchaTronAll'),
+    path('restApi_User/<str:pk>', views.apiUser, name = 'apiUser'),
+    path('restApi_UserAll/', views.apiUserAll, name = 'apiUserAll'),
+    # path('restApi_UserAll_e/', views.apiCapchaAll, name = 'apiUserAll'),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # path('restApi_User/', views.getUser),
+    # path('restApi_CapchaTron/<str:pk>/', views.getCapcha, name ='getCapcha'),
 ]
